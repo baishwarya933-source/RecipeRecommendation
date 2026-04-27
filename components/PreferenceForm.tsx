@@ -33,7 +33,7 @@ interface AccordionStepProps {
 }
 
 const AccordionStep: React.FC<AccordionStepProps> = ({ title, children, isActive, onToggle }) => (
-  <div className="border border-stone-200/80 rounded-2xl bg-white/60 transition-all duration-300 shadow-sm">
+  <div className="rounded-2xl transition-all duration-300 shadow-sm" style={{ backgroundColor: '#FFEFD5', border: '1px solid rgba(0,0,0,0.85)' }}>
     <h2>
       <button type="button" onClick={onToggle} className="flex items-center justify-between w-full p-5 font-semibold text-left text-stone-800 hover:bg-stone-50/50 rounded-2xl">
         <span>{title}</span>
@@ -42,7 +42,7 @@ const AccordionStep: React.FC<AccordionStepProps> = ({ title, children, isActive
     </h2>
     {isActive && (
       <div className="p-5 pt-0 animate-fade-in" style={{animationDuration: '0.4s'}}>
-        <div className="border-t border-stone-200/80 pt-4">
+        <div style={{ borderTop: '1px solid rgba(0,0,0,0.85)' }} className="pt-4">
           {children}
         </div>
       </div>
@@ -107,7 +107,7 @@ const PreferenceForm: React.FC<PreferenceFormProps> = ({ onSubmit, isLoading }) 
   }
 
   return (
-    <div className="bg-white/50 backdrop-blur-xl p-6 md:p-8 rounded-2xl shadow-lg border border-stone-200/80">
+    <div className="backdrop-blur-sm p-6 md:p-8 rounded-2xl shadow-lg" style={{ backgroundColor: '#FFEFD5', border: '1px solid rgba(0,0,0,0.85)' }}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <AccordionStep title="Step 1: Choose Ingredients" isActive={activeStep === 1} onToggle={() => toggleStep(1)}>
           <label htmlFor="ingredient-input" className="block text-sm font-medium text-stone-700 mb-2">Add ingredients you like</label>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { HistoryItem } from '../types';
 import HistoryIcon from './icons/HistoryIcon';
 import TrashIcon from './icons/TrashIcon';
@@ -9,22 +9,30 @@ interface HistorySectionProps {
   onClearHistory: () => void;
 }
 
-const HistoryCard: React.FC<{ item: HistoryItem; onClick: () => void }> = ({ item, onClick }) => (
-  <div 
-    onClick={onClick}
-    className="bg-white rounded-xl shadow-md hover:shadow-lg overflow-hidden transform hover:-translate-y-0.5 transition-all duration-200 cursor-pointer border border-stone-100 flex items-center group"
-  >
-    <img 
-      src={`data:image/png;base64,${item.recommendation.imageBase64}`} 
-      alt={item.recommendation.dishName}
-      className="w-20 h-20 object-cover" 
-    />
-    <div className="p-3">
-      <h4 className="font-bold text-stone-800 text-sm">{item.recommendation.dishName}</h4>
-      <p className="text-xs text-stone-500">{item.recommendation.description.substring(0, 40)}...</p>
+const HistoryCard: React.FC<{ item: HistoryItem; onClick: () => void }> = ({ item, onClick }) => {
+  return (
+    <div
+      onClick={onClick}
+      className="rounded-xl shadow-md hover:shadow-lg overflow-hidden transform hover:-translate-y-0.5 transition-all duration-200 cursor-pointer border border-stone-100 flex flex-col group p-4"
+      style={{ backgroundColor: '#FFEFD5' }}
+    >
+      <div className="mb-2">
+        <h4 className="font-bold text-stone-800 text-sm">{item.recommendation.dishName}</h4>
+        <p className="text-xs text-stone-500">{item.recommendation.description.substring(0, 80)}</p>
+      </div>
+      {(item.recommendation as any).ingredients && (item.recommendation as any).ingredients.length > 0 && (
+        <div className="text-xs text-stone-600">
+          <strong>Ingredients:</strong>
+          <ul className="list-disc list-inside">
+            {(item.recommendation as any).ingredients.slice(0, 6).map((ing: string, i: number) => (
+              <li key={i}>{ing}</li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
-  </div>
-);
+  );
+};
 
 
 const HistorySection: React.FC<HistorySectionProps> = ({ history, onViewRecipe, onClearHistory }) => {

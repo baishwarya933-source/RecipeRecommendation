@@ -12,7 +12,7 @@ const NearbyStores: React.FC<NearbyStoresProps> = ({ stores }) => {
     }
 
     return (
-        <div className="bg-white/50 backdrop-blur-xl p-6 md:p-8 rounded-2xl shadow-lg border border-stone-200/80 mb-8 animate-fade-in">
+        <div className="backdrop-blur-sm p-6 md:p-8 rounded-2xl shadow-md border border-stone-200/30 mb-8 animate-fade-in" style={{ backgroundColor: '#FFEFD5' }}>
             <h2 className="text-2xl font-bold mb-4 text-stone-800 flex items-center">
                 <MapPinIcon className="w-6 h-6 mr-3 text-green-600" />
                 Need Ingredients? Find a Store Near You
@@ -20,7 +20,7 @@ const NearbyStores: React.FC<NearbyStoresProps> = ({ stores }) => {
             <p className="text-stone-600 mb-6">Since you didn't specify any ingredients, here are some nearby places where you can shop:</p>
             <ul className="space-y-3">
                 {stores.map((store, index) => (
-                    <li key={index} className="bg-green-50/50 p-4 rounded-lg hover:bg-green-100/60 transition-colors">
+                        <li key={index} className="bg-green-50/20 p-4 rounded-lg hover:bg-green-100/30 transition-colors" style={{ border: '1px solid rgba(0,0,0,0.85)' }}>
                         <a 
                             href={store.uri} 
                             target="_blank" 

@@ -8,7 +8,8 @@ export interface Recommendation {
   dishName: string;
   description: string;
   ingredients: string[];
-  imageBase64: string;
+  imageBase64?: string;
+  imageUrl?: string;
   instructions?: string[];
 }
 

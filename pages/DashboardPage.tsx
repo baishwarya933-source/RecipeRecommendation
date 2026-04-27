@@ -19,6 +19,8 @@ const DashboardPage: React.FC = () => {
   const [activeRecipe, setActiveRecipe] = useState<Recommendation | null>(null);
   const [searchedPreferences, setSearchedPreferences] = useState<UserPreferences | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [oneTimeMessage, setOneTimeMessage] = useState<string | null>(null);
+  const [showBanner, setShowBanner] = useState(false);
 
   useEffect(() => {
     try {
@@ -30,6 +32,28 @@ const DashboardPage: React.FC = () => {
       console.error("Failed to load or parse recipe history:", e);
       localStorage.removeItem('recipeHistory');
     }
+
+    // check for any one-time message (e.g., signup success) and auto-hide it
+    try {
+      const msg = localStorage.getItem('signupSuccessMessage');
+      if (msg) {
+        setOneTimeMessage(msg);
+        setShowBanner(true);
+        // remove from storage immediately so it won't reappear on refresh
+        localStorage.removeItem('signupSuccessMessage');
+        localStorage.removeItem('lastSignedUpEmail');
+
+        const hideTimer = window.setTimeout(() => {
+          setShowBanner(false);
+          // remove from DOM after the fade-out completes
+          window.setTimeout(() => setOneTimeMessage(null), 400);
+        }, 3000);
+
+        return () => {
+          clearTimeout(hideTimer);
+        };
+      }
+    } catch (err) {}
   }, []);
 
   const handleGetRecommendations = async (preferences: UserPreferences) => {
@@ -44,41 +68,71 @@ const DashboardPage: React.FC = () => {
       const recsPromise = getFoodRecommendations(preferences);
       let storesPromise: Promise<NearbyStore[]> = Promise.resolve([]);
 
+      // Always try to get nearby stores when no ingredients are specified
       if (preferences.includeIngredients.length === 0) {
         storesPromise = new Promise((resolve) => {
-           navigator.geolocation.getCurrentPosition(
-            (position) => {
-                getNearbyStores(position.coords.latitude, position.coords.longitude)
-                    .then(resolve)
-                    .catch(() => resolve([]));
-            },
-            () => {
-                console.warn("Geolocation permission denied by user.");
-                resolve([]);
-            },
-            { timeout: 5000 }
-           );
+           if (navigator.geolocation) {
+             console.log('Requesting user geolocation for nearby stores...');
+             navigator.geolocation.getCurrentPosition(
+              (position) => {
+                  console.log('✅ Geolocation obtained:', position.coords.latitude, position.coords.longitude);
+                  getNearbyStores(position.coords.latitude, position.coords.longitude)
+                      .then((stores) => {
+                        console.log('✅ Nearby stores found:', stores.length);
+                        resolve(stores);
+                      })
+                      .catch((err) => {
+                        console.warn("⚠️ Failed to fetch nearby stores:", err);
+                        resolve([]);
+                      });
+              },
+              (error) => {
+                  console.warn("⚠️ Geolocation permission denied or unavailable:", error.code, error.message);
+                  // Still continue with recipe recommendations
+                  resolve([]);
+              },
+              { 
+                timeout: 10000, 
+                enableHighAccuracy: false,
+                maximumAge: 300000 // Cache location for 5 minutes
+              }
+             );
+           } else {
+             console.warn("⚠️ Geolocation not supported by this browser");
+             resolve([]);
+           }
         });
+      } else {
+        console.log('Skipping nearby stores: user specified ingredients');
       }
 
       const [recsResult, storesResult] = await Promise.allSettled([recsPromise, storesPromise]);
       
-      if (recsResult.status === 'fulfilled') {
+      if (recsResult.status === 'fulfilled' && recsResult.value.length > 0) {
+        console.log('✅ Recipes fetched successfully:', recsResult.value.length);
         setRecommendations(recsResult.value);
-      } else {
-        console.error('Recipe fetch failed:', recsResult.reason);
-        setError(recsResult.reason instanceof Error ? recsResult.reason.message : 'Failed to fetch recommendations.');
+        setError(null);
+      } else if (recsResult.status === 'rejected') {
+        console.error('❌ Recipe fetch failed:', recsResult.reason);
+        setError(recsResult.reason instanceof Error ? recsResult.reason.message : 'Failed to fetch recommendations. Please try again.');
+        setRecommendations([]);
       }
 
       if (storesResult.status === 'fulfilled') {
-        setNearbyStores(storesResult.value);
+        if (storesResult.value.length > 0) {
+          console.log('✅ Displaying', storesResult.value.length, 'nearby stores');
+          setNearbyStores(storesResult.value);
+        } else {
+          console.log('ℹ️ No nearby stores found or geolocation not provided');
+        }
       } else {
-        console.error('Nearby stores fetch failed:', storesResult.reason);
+        console.error('❌ Nearby stores fetch failed:', storesResult.reason);
       }
 
     } catch (err) {
-      console.error(err);
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
+      console.error('❌ Unexpected error in handleGetRecommendations:', err);
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred. Please try again.');
+      setRecommendations([]);
     } finally {
       setIsLoading(false);
     }
@@ -103,8 +157,8 @@ const DashboardPage: React.FC = () => {
   };
 
   return (
-    <>
-      <div className="space-y-12">
+    <div style={{ backgroundColor: '#99FFFF' }} className="min-h-screen overflow-x-hidden">
+      <div className="space-y-12 max-w-6xl mx-auto p-6 md:p-8">
         <div>
           <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-600 to-teal-600 mb-2">
             Create Your Perfect Meal
@@ -117,6 +171,11 @@ const DashboardPage: React.FC = () => {
         <PreferenceForm onSubmit={handleGetRecommendations} isLoading={isLoading} />
 
         <div className="mt-12">
+          {oneTimeMessage && (
+            <div className={`max-w-md mx-auto mb-6 text-center p-3 bg-green-100/70 text-green-800 rounded-md transition-opacity duration-500 ease-in-out transform ${showBanner ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'}`}>
+              {oneTimeMessage}
+            </div>
+          )}
           {isLoading && <LoadingSpinner />}
           
           {error && (
@@ -130,7 +189,6 @@ const DashboardPage: React.FC = () => {
           {!isLoading && !error && hasSearched && (
             <>
               {nearbyStores.length > 0 && <NearbyStores stores={nearbyStores} />}
-              
               {recommendations.length > 0 ? (
                 <div>
                   <h2 className="text-3xl font-bold text-stone-800 mb-6">Your Personalized Recommendations:</h2>
@@ -149,7 +207,7 @@ const DashboardPage: React.FC = () => {
                 <div className="max-w-md mx-auto text-center p-6 bg-stone-100/80 text-stone-600 rounded-2xl flex flex-col items-center justify-center gap-4 border border-stone-200">
                   <SearchXIcon className="w-10 h-10" />
                   <h3 className="font-bold text-lg">No Recipes Found</h3>
-                  <p className="text-sm">We couldn't find any recipes matching your criteria. Try adjusting your preferences!</p>
+                  <p className="text-sm">We couldn't find any recipes matching your ingredients. Try adjusting your inputs!</p>
                 </div>
               )}
             </>
@@ -171,7 +229,7 @@ const DashboardPage: React.FC = () => {
           preferences={searchedPreferences} 
         />
       )}
-    </>
+    </div>
   );
 };
 

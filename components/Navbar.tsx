@@ -11,7 +11,7 @@ interface NavbarProps {
 
 const Navbar: React.FC<NavbarProps> = ({ isLoggedIn, onLogout, onNavigate }) => {
   return (
-    <nav className="bg-white/60 backdrop-blur-lg sticky top-0 z-50 border-b border-stone-200/80">
+    <nav className="backdrop-blur-lg sticky top-0 z-50 border-b" style={{ backgroundColor: '#FFEFD5', borderBottom: '1px solid rgba(0,0,0,0.85)' }}>
       <div className="max-w-6xl mx-auto px-4 md:px-8">
         <div className="flex items-center justify-between h-16">
           <div 
@@ -19,7 +19,7 @@ const Navbar: React.FC<NavbarProps> = ({ isLoggedIn, onLogout, onNavigate }) => 
             onClick={() => onNavigate(isLoggedIn ? 'dashboard' : 'home')}
           >
             <ForkKnifeIcon className="h-7 w-7 text-green-600" />
-            <span className="ml-2 text-xl font-bold text-stone-800">Gemini Eats</span>
+            <span className="ml-2 text-xl font-bold text-stone-800">DishGenius</span>
           </div>
           <div className="flex items-center space-x-2">
             {isLoggedIn ? (
